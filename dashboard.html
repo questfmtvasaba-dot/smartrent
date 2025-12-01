@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SmartRent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #575a60;
+            --secondary: #8c91a4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #677071;
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+        }
+        
+        .dashboard-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+        
+        .dashboard-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background: var(--danger);
+            border-radius: 50%;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            color: #6b7280;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: #f3f4f6;
+            color: var(--primary);
+        }
+        
+        .nav-item.active {
+            background: #eff6ff;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .badge-info {
+            background: #cffafe;
+            color: #155e75;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .property-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .message-sent {
+            background: var(--primary);
+            color: white;
+            margin-left: auto;
+        }
+        
+        .message-received {
+            background: #f3f4f6;
+            color: #374151;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Mobile Menu Button -->
+    <div class="lg:hidden fixed top-4 left-4 z-50">
+        <button id="mobile-menu-button" class="p-2 bg-white rounded-lg shadow-lg">
+            <i class="fas fa-bars text-gray-700"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg">
+        <!-- Logo -->
+        <div class="flex items-center justify-between p-6 border-b">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-home text-blue-600 text-2xl"></i>
+                <span class="text-xl font-bold text-blue-600">SmartRent</span>
+            </div>
+        </div>
+
+        <!-- User Profile -->
+        <div class="p-6 border-b">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user text-blue-600"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate" id="user-name">Loading...</p>
+                    <p class="text-sm text-gray-500 truncate" id="user-role">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="p-4 space-y-2" id="navigation">
+            <!-- Navigation items will be loaded based on user role -->
+        </nav>
+
+        <!-- Footer -->
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t">
+            <button onclick="logout()" class="flex items-center space-x-3 text-gray-600 hover:text-red-600 transition w-full p-2 rounded-lg hover:bg-red-50">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="lg:ml-64 min-h-screen">
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="flex items-center justify-between p-4">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-gray-800" id="page-title">Dashboard</h1>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Notifications -->
+                    <div class="relative">
+                        <button id="notifications-button" class="p-2 text-gray-600 hover:text-blue-600 relative">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-dot hidden"></span>
+                        </button>
+                        <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border">
+                            <div class="p-4 border-b">
+                                <h3 class="font-semibold text-gray-800">Notifications</h3>
+                            </div>
+                            <div class="max-h-96 overflow-y-auto" id="notifications-list">
+                                <!-- Notifications will be loaded here -->
+                            </div>
+                            <div class="p-2 border-t text-center">
+                                <a href="#" class="text-sm text-blue-600 hover:underline">View All</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Messages -->
+                    <div class="relative">
+                        <button id="messages-button" class="p-2 text-gray-600 hover:text-blue-600 relative">
+                            <i class="fas fa-envelope text-xl"></i>
+                            <span class="notification-dot hidden"></span>
+                        </button>
+                    </div>
+
+                    <!-- User Menu -->
+                    <div class="relative">
+                        <button id="user-menu-button" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100">
+                            <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <span class="hidden md:inline text-sm font-medium" id="topbar-user-name">Loading...</span>
+                            <i class="fas fa-chevron-down text-sm text-gray-500"></i>
+                        </button>
+                        
+                        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-50 border">
+                            <div class="p-4 border-b">
+                                <p class="text-sm font-medium text-gray-900" id="dropdown-user-name">Loading...</p>
+                                <p class="text-sm text-gray-500" id="dropdown-user-email">Loading...</p>
+                            </div>
+                            <div class="p-2">
+                                <a href="profile.html" class="flex items-center space-x-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                                    <i class="fas fa-user-circle w-5"></i>
+                                    <span>Profile</span>
+                                </a>
+                                <a href="settings.html" class="flex items-center space-x-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+                                    <i class="fas fa-cog w-5"></i>
+                                    <span>Settings</span>
+                                </a>
+                                <button onclick="logout()" class="flex items-center space-x-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg w-full text-left">
+                                    <i class="fas fa-sign-out-alt w-5"></i>
+                                    <span>Logout</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="p-6">
+            <div id="loading-spinner" class="flex justify-center items-center py-12">
+                <div class="loading-spinner"></div>
+            </div>
+            
+            <div id="dashboard-content" class="hidden">
+                <!-- Content will be loaded based on user role and active page -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Notifications Dropdown Script -->
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+        });
+
+        // Notifications dropdown
+        document.getElementById('notifications-button').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('notifications-dropdown');
+            dropdown.classList.toggle('hidden');
+        });
+
+        // User menu dropdown
+        document.getElementById('user-menu-button').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('user-dropdown');
+            dropdown.classList.toggle('hidden');
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function() {
+            document.getElementById('notifications-dropdown').classList.add('hidden');
+            document.getElementById('user-dropdown').classList.add('hidden');
+        });
+
+        // Logout function
+        async function logout() {
+            try {
+                const result = await AuthService.signOut();
+                if (result.success) {
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        // Load dashboard based on user role
+        async function loadDashboard() {
+            try {
+                const user = await AuthService.getCurrentUser();
+                if (!user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Get user profile
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (error) throw error;
+
+                // Update UI with user info
+                document.getElementById('user-name').textContent = profile.full_name;
+                document.getElementById('user-role').textContent = profile.role.charAt(0).toUpperCase() + profile.role.slice(1);
+                document.getElementById('topbar-user-name').textContent = profile.full_name;
+                document.getElementById('dropdown-user-name').textContent = profile.full_name;
+                document.getElementById('dropdown-user-email').textContent = user.email;
+
+                // Load role-specific navigation and content
+                loadNavigation(profile.role);
+                loadDashboardContent(profile.role);
+
+                // Hide loading spinner, show content
+                document.getElementById('loading-spinner').classList.add('hidden');
+                document.getElementById('dashboard-content').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Dashboard loading error:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Load navigation based on user role
+        function loadNavigation(role) {
+            const navigation = document.getElementById('navigation');
+            let navItems = '';
+
+            const commonItems = [
+                { icon: 'fas fa-tachometer-alt', text: 'Dashboard', page: 'dashboard' },
+                { icon: 'fas fa-user-circle', text: 'Profile', page: 'profile' },
+                { icon: 'fas fa-cog', text: 'Settings', page: 'settings' }
+            ];
+
+            const roleSpecificItems = {
+                tenant: [
+                    { icon: 'fas fa-search', text: 'Find Properties', page: 'find-properties' },
+                    { icon: 'fas fa-heart', text: 'Favorites', page: 'favorites' },
+                    { icon: 'fas fa-calendar-check', text: 'My Bookings', page: 'bookings' },
+                    { icon: 'fas fa-file-contract', text: 'My Rentals', page: 'rentals' },
+                    { icon: 'fas fa-tools', text: 'Maintenance', page: 'maintenance' },
+                    { icon: 'fas fa-credit-card', text: 'Payments', page: 'payments' }
+                ],
+                agent: [
+                    { icon: 'fas fa-home', text: 'My Properties', page: 'properties' },
+                    { icon: 'fas fa-plus-circle', text: 'Add Property', page: 'add-property' },
+                    { icon: 'fas fa-users', text: 'Leads', page: 'leads' },
+                    { icon: 'fas fa-calendar', text: 'Appointments', page: 'appointments' },
+                    { icon: 'fas fa-chart-line', text: 'Analytics', page: 'analytics' },
+                    { icon: 'fas fa-money-bill-wave', text: 'Commissions', page: 'commissions' }
+                ],
+                landlord: [
+                    { icon: 'fas fa-building', text: 'My Properties', page: 'properties' },
+                    { icon: 'fas fa-plus-circle', text: 'Add Property', page: 'add-property' },
+                    { icon: 'fas fa-users', text: 'Tenants', page: 'tenants' },
+                    { icon: 'fas fa-money-bill-wave', text: 'Rent Collection', page: 'rent-collection' },
+                    { icon: 'fas fa-chart-bar', text: 'Financial Reports', page: 'reports' },
+                    { icon: 'fas fa-tools', text: 'Maintenance', page: 'maintenance' }
+                ],
+                admin: [
+                    { icon: 'fas fa-users-cog', text: 'User Management', page: 'users' },
+                    { icon: 'fas fa-home', text: 'Property Management', page: 'property-management' },
+                    { icon: 'fas fa-shield-alt', text: 'Verifications', page: 'verifications' },
+                    { icon: 'fas fa-flag', text: 'Reports', page: 'reports' },
+                    { icon: 'fas fa-chart-pie', text: 'Platform Analytics', page: 'analytics' },
+                    { icon: 'fas fa-cogs', text: 'System Settings', page: 'system-settings' }
+                ]
+            };
+
+            // Combine common and role-specific items
+            const allItems = [...commonItems, ...(roleSpecificItems[role] || [])];
+
+            allItems.forEach(item => {
+                navItems += `
+                    <div class="nav-item" onclick="loadPage('${item.page}')">
+                        <i class="${item.icon} w-5 mr-3"></i>
+                        <span>${item.text}</span>
+                    </div>
+                `;
+            });
+
+            navigation.innerHTML = navItems;
+        }
+
+        // Load dashboard content based on user role
+        async function loadDashboardContent(role) {
+            const content = document.getElementById('dashboard-content');
+            
+            switch (role) {
+                case 'tenant':
+                    content.innerHTML = await loadTenantDashboard();
+                    break;
+                case 'agent':
+                    content.innerHTML = await loadAgentDashboard();
+                    break;
+                case 'landlord':
+                    content.innerHTML = await loadLandlordDashboard();
+                    break;
+                case 'admin':
+                    content.innerHTML = await loadAdminDashboard();
+                    break;
+                default:
+                    content.innerHTML = '<p>Invalid user role</p>';
+            }
+
+            // Initialize charts and other dynamic content
+            initializeCharts();
+        }
+
+        // Page loading function
+        async function loadPage(page) {
+            document.getElementById('page-title').textContent = getPageTitle(page);
+            
+            const content = document.getElementById('dashboard-content');
+            content.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+
+            // Simulate loading delay
+            setTimeout(async () => {
+                let pageContent = '';
+                
+                switch (page) {
+                    case 'dashboard':
+                        const user = await AuthService.getCurrentUser();
+                        const { data: profile } = await supabase
+                            .from('profiles')
+                            .select('role')
+                            .eq('id', user.id)
+                            .single();
+                        
+                        switch (profile.role) {
+                            case 'tenant':
+                                pageContent = await loadTenantDashboard();
+                                break;
+                            case 'agent':
+                                pageContent = await loadAgentDashboard();
+                                break;
+                            case 'landlord':
+                                pageContent = await loadLandlordDashboard();
+                                break;
+                            case 'admin':
+                                pageContent = await loadAdminDashboard();
+                                break;
+                        }
+                        break;
+                    case 'profile':
+                        pageContent = await loadProfilePage();
+                        break;
+                    case 'find-properties':
+                        pageContent = await loadFindPropertiesPage();
+                        break;
+                    // Add other pages as needed
+                    default:
+                        pageContent = `<div class="text-center py-12">
+                            <i class="fas fa-cogs text-6xl text-gray-400 mb-4"></i>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-2">Page Under Development</h2>
+                            <p class="text-gray-600">This page is coming soon!</p>
+                        </div>`;
+                }
+                
+                content.innerHTML = pageContent;
+                initializeCharts();
+            }, 500);
+        }
+
+        function getPageTitle(page) {
+            const titles = {
+                'dashboard': 'Dashboard',
+                'profile': 'My Profile',
+                'find-properties': 'Find Properties',
+                'favorites': 'My Favorites',
+                'bookings': 'My Bookings',
+                'rentals': 'My Rentals',
+                'maintenance': 'Maintenance Requests',
+                'payments': 'Payment History',
+                'properties': 'My Properties',
+                'add-property': 'Add New Property',
+                'leads': 'Leads Management',
+                'appointments': 'Appointments',
+                'analytics': 'Analytics',
+                'commissions': 'Commissions',
+                'tenants': 'Tenant Management',
+                'rent-collection': 'Rent Collection',
+                'reports': 'Financial Reports',
+                'users': 'User Management',
+                'property-management': 'Property Management',
+                'verifications': 'Verification Requests',
+                'system-settings': 'System Settings'
+            };
+            
+            return titles[page] || 'SmartRent Dashboard';
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+
+    <!-- Dashboard Content Loaders -->
+    <script>
+        // Tenant Dashboard
+        async function loadTenantDashboard() {
+            const user = await AuthService.getCurrentUser();
+            
+            // Fetch tenant data
+            const [
+                bookingsData,
+                favoritesData,
+                rentalsData,
+                paymentsData
+            ] = await Promise.all([
+                supabase.from('bookings').select('*, properties(title, address)').eq('tenant_id', user.id).order('booking_date', { ascending: false }).limit(5),
+                supabase.from('favorites').select('*, properties(title, address, price, property_type)').eq('tenant_id', user.id).limit(5),
+                supabase.from('rentals').select('*, properties(title, address)').eq('tenant_id', user.id).order('start_date', { ascending: false }).limit(5),
+                supabase.from('payments').select('*').eq('tenant_id', user.id).order('created_at', { ascending: false }).limit(5)
+            ]);
+
+            return `
+                <div class="space-y-6">
+                    <!-- Welcome Section -->
+                    <div class="dashboard-card p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome back!</h2>
+                                <p class="text-gray-600">Here's what's happening with your rental journey.</p>
+                            </div>
+                            <button onclick="loadPage('find-properties')" class="btn btn-primary mt-4 md:mt-0">
+                                <i class="fas fa-search mr-2"></i>Find Properties
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="stat-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-blue-100">Active Rentals</p>
+                                    <p class="text-2xl font-bold mt-1">${rentalsData.data?.filter(r => r.status === 'active').length || 0}</p>
+                                </div>
+                                <i class="fas fa-home text-2xl text-blue-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-green-500 to-green-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-green-100">Upcoming Viewings</p>
+                                    <p class="text-2xl font-bold mt-1">${bookingsData.data?.filter(b => b.status === 'confirmed').length || 0}</p>
+                                </div>
+                                <i class="fas fa-calendar-check text-2xl text-green-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-purple-500 to-purple-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-purple-100">Favorite Properties</p>
+                                    <p class="text-2xl font-bold mt-1">${favoritesData.data?.length || 0}</p>
+                                </div>
+                                <i class="fas fa-heart text-2xl text-purple-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-orange-500 to-orange-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-orange-100">Pending Payments</p>
+                                    <p class="text-2xl font-bold mt-1">${paymentsData.data?.filter(p => p.status === 'pending').length || 0}</p>
+                                </div>
+                                <i class="fas fa-credit-card text-2xl text-orange-200"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Upcoming Viewings -->
+                        <div class="dashboard-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Upcoming Viewings</h3>
+                                <button onclick="loadPage('bookings')" class="text-sm text-blue-600 hover:underline">View All</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${bookingsData.data?.slice(0, 3).map(booking => `
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p class="font-medium text-gray-800">${booking.properties.title}</p>
+                                            <p class="text-sm text-gray-600">${new Date(booking.booking_date).toLocaleDateString()}</p>
+                                        </div>
+                                        <span class="badge ${booking.status === 'confirmed' ? 'badge-success' : 'badge-warning'}">
+                                            ${booking.status}
+                                        </span>
+                                    </div>
+                                `).join('') || '<p class="text-gray-500 text-center py-4">No upcoming viewings</p>'}
+                            </div>
+                        </div>
+
+                        <!-- Favorite Properties -->
+                        <div class="dashboard-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Favorite Properties</h3>
+                                <button onclick="loadPage('favorites')" class="text-sm text-blue-600 hover:underline">View All</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${favoritesData.data?.slice(0, 3).map(fav => `
+                                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-home text-blue-600"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-medium text-gray-800">${fav.properties.title}</p>
+                                            <p class="text-sm text-gray-600">₦${fav.properties.price.toLocaleString()}/month</p>
+                                        </div>
+                                    </div>
+                                `).join('') || '<p class="text-gray-500 text-center py-4">No favorite properties</p>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="dashboard-card p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
+                        <div class="space-y-3">
+                            ${generateRecentActivity(bookingsData.data, rentalsData.data, paymentsData.data)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Agent Dashboard
+        async function loadAgentDashboard() {
+            const user = await AuthService.getCurrentUser();
+            
+            // Fetch agent data
+            const [
+                propertiesData,
+                bookingsData,
+                leadsData,
+                commissionsData
+            ] = await Promise.all([
+                supabase.from('properties').select('*').eq('agent_id', user.id),
+                supabase.from('bookings').select('*, properties(title), profiles(full_name)').eq('agent_id', user.id).order('booking_date', { ascending: false }).limit(5),
+                supabase.from('messages').select('*, profiles(full_name)').eq('receiver_id', user.id).order('created_at', { ascending: false }).limit(5),
+                supabase.from('payments').select('*').eq('agent_id', user.id).order('created_at', { ascending: false }).limit(5)
+            ]);
+
+            const totalCommission = commissionsData.data?.reduce((sum, payment) => sum + (payment.amount * 0.05), 0) || 0;
+
+            return `
+                <div class="space-y-6">
+                    <!-- Welcome Section -->
+                    <div class="dashboard-card p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">Agent Dashboard</h2>
+                                <p class="text-gray-600">Manage your properties and client interactions.</p>
+                            </div>
+                            <button onclick="loadPage('add-property')" class="btn btn-primary mt-4 md:mt-0">
+                                <i class="fas fa-plus mr-2"></i>Add Property
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="stat-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-blue-100">Total Properties</p>
+                                    <p class="text-2xl font-bold mt-1">${propertiesData.data?.length || 0}</p>
+                                </div>
+                                <i class="fas fa-home text-2xl text-blue-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-green-500 to-green-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-green-100">Upcoming Viewings</p>
+                                    <p class="text-2xl font-bold mt-1">${bookingsData.data?.filter(b => b.status === 'confirmed').length || 0}</p>
+                                </div>
+                                <i class="fas fa-calendar-check text-2xl text-green-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-purple-500 to-purple-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-purple-100">New Leads</p>
+                                    <p class="text-2xl font-bold mt-1">${leadsData.data?.length || 0}</p>
+                                </div>
+                                <i class="fas fa-users text-2xl text-purple-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-orange-500 to-orange-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-orange-100">Total Commission</p>
+                                    <p class="text-2xl font-bold mt-1">₦${totalCommission.toLocaleString()}</p>
+                                </div>
+                                <i class="fas fa-money-bill-wave text-2xl text-orange-200"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Upcoming Appointments -->
+                        <div class="dashboard-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Upcoming Appointments</h3>
+                                <button onclick="loadPage('appointments')" class="text-sm text-blue-600 hover:underline">View All</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${bookingsData.data?.slice(0, 3).map(booking => `
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p class="font-medium text-gray-800">${booking.properties.title}</p>
+                                            <p class="text-sm text-gray-600">With ${booking.profiles.full_name}</p>
+                                            <p class="text-sm text-gray-500">${new Date(booking.booking_date).toLocaleDateString()}</p>
+                                        </div>
+                                        <span class="badge ${booking.status === 'confirmed' ? 'badge-success' : 'badge-warning'}">
+                                            ${booking.status}
+                                        </span>
+                                    </div>
+                                `).join('') || '<p class="text-gray-500 text-center py-4">No upcoming appointments</p>'}
+                            </div>
+                        </div>
+
+                        <!-- Recent Leads -->
+                        <div class="dashboard-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Recent Leads</h3>
+                                <button onclick="loadPage('leads')" class="text-sm text-blue-600 hover:underline">View All</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${leadsData.data?.slice(0, 3).map(lead => `
+                                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-user text-green-600"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-medium text-gray-800">${lead.profiles.full_name}</p>
+                                            <p class="text-sm text-gray-600">${lead.content.substring(0, 50)}...</p>
+                                        </div>
+                                    </div>
+                                `).join('') || '<p class="text-gray-500 text-center py-4">No recent leads</p>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Chart -->
+                    <div class="dashboard-card p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Monthly Performance</h3>
+                        <div class="h-64">
+                            <canvas id="agentPerformanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Landlord Dashboard
+        async function loadLandlordDashboard() {
+            const user = await AuthService.getCurrentUser();
+            
+            // Fetch landlord data
+            const [
+                propertiesData,
+                rentalsData,
+                paymentsData,
+                maintenanceData
+            ] = await Promise.all([
+                supabase.from('properties').select('*').eq('landlord_id', user.id),
+                supabase.from('rentals').select('*, properties(title), profiles(full_name)').eq('landlord_id', user.id),
+                supabase.from('payments').select('*').eq('landlord_id', user.id).order('created_at', { ascending: false }).limit(5),
+                supabase.from('maintenance_requests').select('*, properties(title)').eq('property_id', user.id).order('created_at', { ascending: false }).limit(5)
+            ]);
+
+            const totalRent = paymentsData.data?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
+            const occupancyRate = propertiesData.data?.length ? (rentalsData.data?.filter(r => r.status === 'active').length / propertiesData.data.length * 100).toFixed(1) : 0;
+
+            return `
+                <div class="space-y-6">
+                    <!-- Welcome Section -->
+                    <div class="dashboard-card p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">Landlord Dashboard</h2>
+                                <p class="text-gray-600">Manage your properties and rental income.</p>
+                            </div>
+                            <button onclick="loadPage('add-property')" class="btn btn-primary mt-4 md:mt-0">
+                                <i class="fas fa-plus mr-2"></i>Add Property
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="stat-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-blue-100">Total Properties</p>
+                                    <p class="text-2xl font-bold mt-1">${propertiesData.data?.length || 0}</p>
+                                </div>
+                                <i class="fas fa-building text-2xl text-blue-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-green-500 to-green-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-green-100">Occupancy Rate</p>
+                                    <p class="text-2xl font-bold mt-1">${occupancyRate}%</p>
+                                </div>
+                                <i class="fas fa-chart-line text-2xl text-green-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-purple-500 to-purple-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-purple-100">Active Tenants</p>
+                                    <p class="text-2xl font-bold mt-1">${rentalsData.data?.filter(r => r.status === 'active').length || 0}</p>
+                                </div>
+                                <i class="fas fa-users text-2xl text-purple-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-orange-500 to-orange-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-orange-100">Monthly Revenue</p>
+                                    <p class="text-2xl font-bold mt-1">₦${totalRent.toLocaleString()}</p>
+                                </div>
+                                <i class="fas fa-money-bill-wave text-2xl text-orange-200"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Recent Payments -->
+                        <div class="dashboard-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Recent Payments</h3>
+                                <button onclick="loadPage('rent-collection')" class="text-sm text-blue-600 hover:underline">View All</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${paymentsData.data?.slice(0, 3).map(payment => `
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p class="font-medium text-gray-800">₦${payment.amount.toLocaleString()}</p>
+                                            <p class="text-sm text-gray-600">${new Date(payment.created_at).toLocaleDateString()}</p>
+                                        </div>
+                                        <span class="badge ${payment.status === 'completed' ? 'badge-success' : payment.status === 'pending' ? 'badge-warning' : 'badge-danger'}">
+                                            ${payment.status}
+                                        </span>
+                                    </div>
+                                `).join('') || '<p class="text-gray-500 text-center py-4">No recent payments</p>'}
+                            </div>
+                        </div>
+
+                        <!-- Maintenance Requests -->
+                        <div class="dashboard-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Maintenance Requests</h3>
+                                <button onclick="loadPage('maintenance')" class="text-sm text-blue-600 hover:underline">View All</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${maintenanceData.data?.slice(0, 3).map(request => `
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p class="font-medium text-gray-800">${request.title}</p>
+                                            <p class="text-sm text-gray-600">${request.properties.title}</p>
+                                        </div>
+                                        <span class="badge ${request.priority === 'urgent' ? 'badge-danger' : request.priority === 'high' ? 'badge-warning' : 'badge-info'}">
+                                            ${request.priority}
+                                        </span>
+                                    </div>
+                                `).join('') || '<p class="text-gray-500 text-center py-4">No maintenance requests</p>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Revenue Chart -->
+                    <div class="dashboard-card p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Revenue Overview</h3>
+                        <div class="h-64">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Admin Dashboard
+        async function loadAdminDashboard() {
+            // Fetch admin data
+            const [
+                usersData,
+                propertiesData,
+                reportsData,
+                paymentsData
+            ] = await Promise.all([
+                supabase.from('profiles').select('*'),
+                supabase.from('properties').select('*'),
+                supabase.from('reports').select('*').eq('status', 'pending'),
+                supabase.from('payments').select('*').order('created_at', { ascending: false }).limit(5)
+            ]);
+
+            const totalRevenue = paymentsData.data?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
+            const platformFee = totalRevenue * 0.02; // 2% platform fee
+
+            return `
+                <div class="space-y-6">
+                    <!-- Welcome Section -->
+                    <div class="dashboard-card p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">Admin Dashboard</h2>
+                                <p class="text-gray-600">Monitor platform performance and manage users.</p>
+                            </div>
+                            <div class="flex space-x-3 mt-4 md:mt-0">
+                                <button onclick="loadPage('users')" class="btn bg-green-600 text-white">
+                                    <i class="fas fa-users mr-2"></i>Manage Users
+                                </button>
+                                <button onclick="loadPage('verifications')" class="btn bg-purple-600 text-white">
+                                    <i class="fas fa-shield-alt mr-2"></i>Verifications
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="stat-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-blue-100">Total Users</p>
+                                    <p class="text-2xl font-bold mt-1">${usersData.data?.length || 0}</p>
+                                </div>
+                                <i class="fas fa-users text-2xl text-blue-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-green-500 to-green-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-green-100">Total Properties</p>
+                                    <p class="text-2xl font-bold mt-1">${propertiesData.data?.length || 0}</p>
+                                </div>
+                                <i class="fas fa-home text-2xl text-green-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-purple-500 to-purple-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-purple-100">Pending Reports</p>
+                                    <p class="text-2xl font-bold mt-1">${reportsData.data?.length || 0}</p>
+                                </div>
+                                <i class="fas fa-flag text-2xl text-purple-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-gradient-to-r from-orange-500 to-orange-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-orange-100">Platform Revenue</p>
+                                    <p class="text-2xl font-bold mt-1">₦${platformFee.toLocaleString()}</p>
+                                </div>
+                                <i class="fas fa-chart-bar text-2xl text-orange-200"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Recent Users -->
+                        <div class="dashboard-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Recent Users</h3>
+                                <button onclick="loadPage('users')" class="text-sm text-blue-600 hover:underline">View All</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${usersData.data?.slice(0, 5).map(user => `
+                                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-user text-blue-600"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-medium text-gray-800">${user.full_name}</p>
+                                            <p class="text-sm text-gray-600 capitalize">${user.role}</p>
+                                        </div>
+                                        <span class="badge ${user.id_verified ? 'badge-success' : 'badge-warning'}">
+                                            ${user.id_verified ? 'Verified' : 'Pending'}
+                                        </span>
+                                    </div>
+                                `).join('') || '<p class="text-gray-500 text-center py-4">No users found</p>'}
+                            </div>
+                        </div>
+
+                        <!-- Platform Reports -->
+                        <div class="dashboard-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Pending Reports</h3>
+                                <button onclick="loadPage('reports')" class="text-sm text-blue-600 hover:underline">View All</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${reportsData.data?.slice(0, 3).map(report => `
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p class="font-medium text-gray-800">${report.reason}</p>
+                                            <p class="text-sm text-gray-600">${report.reported_entity_type}</p>
+                                        </div>
+                                        <span class="badge badge-warning">Pending</span>
+                                    </div>
+                                `).join('') || '<p class="text-gray-500 text-center py-4">No pending reports</p>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Platform Analytics -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="dashboard-card p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">User Distribution</h3>
+                            <div class="h-64">
+                                <canvas id="userDistributionChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="dashboard-card p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Platform Growth</h3>
+                            <div class="h-64">
+                                <canvas id="platformGrowthChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Helper function to generate recent activity
+        function generateRecentActivity(bookings, rentals, payments) {
+            const activities = [];
+            
+            if (bookings) {
+                bookings.forEach(booking => {
+                    activities.push({
+                        type: 'booking',
+                        message: `Viewing scheduled for ${booking.properties.title}`,
+                        date: booking.booking_date,
+                        status: booking.status
+                    });
+                });
+            }
+            
+            if (rentals) {
+                rentals.forEach(rental => {
+                    activities.push({
+                        type: 'rental',
+                        message: `Rental agreement signed for ${rental.properties.title}`,
+                        date: rental.start_date,
+                        status: rental.status
+                    });
+                });
+            }
+            
+            if (payments) {
+                payments.forEach(payment => {
+                    activities.push({
+                        type: 'payment',
+                        message: `Payment of ₦${payment.amount.toLocaleString()} ${payment.status}`,
+                        date: payment.created_at,
+                        status: payment.status
+                    });
+                });
+            }
+            
+            // Sort by date and return latest 5
+            return activities
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 5)
+                .map(activity => `
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center ${
+                            activity.type === 'booking' ? 'bg-blue-100 text-blue-600' :
+                            activity.type === 'rental' ? 'bg-green-100 text-green-600' :
+                            'bg-purple-100 text-purple-600'
+                        }">
+                            <i class="fas fa-${
+                                activity.type === 'booking' ? 'calendar' :
+                                activity.type === 'rental' ? 'file-contract' : 'credit-card'
+                            } text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-800">${activity.message}</p>
+                            <p class="text-xs text-gray-500">${new Date(activity.date).toLocaleDateString()}</p>
+                        </div>
+                        <span class="badge ${
+                            activity.status === 'confirmed' || activity.status === 'completed' ? 'badge-success' :
+                            activity.status === 'pending' ? 'badge-warning' : 'badge-info'
+                        }">
+                            ${activity.status}
+                        </span>
+                    </div>
+                `).join('') || '<p class="text-gray-500 text-center py-4">No recent activity</p>';
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            // Agent Performance Chart
+            const agentCtx = document.getElementById('agentPerformanceChart');
+            if (agentCtx) {
+                new Chart(agentCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Properties Listed',
+                            data: [12, 19, 3, 5, 2, 3],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4
+                        }, {
+                            label: 'Deals Closed',
+                            data: [2, 3, 2, 4, 1, 3],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart');
+            if (revenueCtx) {
+                new Chart(revenueCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Rental Income',
+                            data: [1200000, 1900000, 1500000, 2100000, 1800000, 2200000],
+                            backgroundColor: '#10b981'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '₦' + (value / 1000000).toFixed(1) + 'M';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // User Distribution Chart
+            const userDistCtx = document.getElementById('userDistributionChart');
+            if (userDistCtx) {
+                new Chart(userDistCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Tenants', 'Agents', 'Landlords', 'Admins'],
+                        datasets: [{
+                            data: [65, 15, 15, 5],
+                            backgroundColor: [
+                                '#3b82f6',
+                                '#10b981',
+                                '#8b5cf6',
+                                '#f59e0b'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Platform Growth Chart
+            const growthCtx = document.getElementById('platformGrowthChart');
+            if (growthCtx) {
+                new Chart(growthCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'New Users',
+                            data: [120, 190, 150, 210, 180, 220],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4
+                        }, {
+                            label: 'New Properties',
+                            data: [45, 60, 55, 75, 65, 80],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

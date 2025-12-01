@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SmartRent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* All the previous CSS styles remain the same */
+        :root {
+            --primary: #3b82f6;
+            --secondary: #1e40af;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        
+        /* ... rest of the CSS ... */
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Mobile Menu Button -->
+    <div class="lg:hidden fixed top-4 left-4 z-50">
+        <button id="mobile-menu-button" class="p-2 bg-white rounded-lg shadow-lg">
+            <i class="fas fa-bars text-gray-700"></i>
+        </button>
+    </div>
+
+    <!-- Login Modal (Shown by default) -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+            <div class="text-center mb-6">
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <i class="fas fa-home text-blue-600 text-3xl"></i>
+                    <span class="text-2xl font-bold text-blue-600">SmartRent</span>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">Demo Login</h2>
+                <p class="text-gray-600">Choose a demo role to explore</p>
+            </div>
+
+            <div class="space-y-4">
+                <button onclick="demoLogin('tenant')" class="w-full p-4 border-2 border-blue-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition text-left">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-blue-600"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-800">Tenant Demo</div>
+                            <div class="text-sm text-gray-600">Browse properties, book viewings</div>
+                        </div>
+                    </div>
+                </button>
+
+                <button onclick="demoLogin('agent')" class="w-full p-4 border-2 border-green-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition text-left">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-tie text-green-600"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-800">Agent Demo</div>
+                            <div class="text-sm text-gray-600">Manage properties and clients</div>
+                        </div>
+                    </div>
+                </button>
+
+                <button onclick="demoLogin('landlord')" class="w-full p-4 border-2 border-purple-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition text-left">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-building text-purple-600"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-800">Landlord Demo</div>
+                            <div class="text-sm text-gray-600">Manage properties and tenants</div>
+                        </div>
+                    </div>
+                </button>
+
+                <button onclick="demoLogin('admin')" class="w-full p-4 border-2 border-orange-200 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition text-left">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-cog text-orange-600"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-800">Admin Demo</div>
+                            <div class="text-sm text-gray-600">Platform management</div>
+                        </div>
+                    </div>
+                </button>
+            </div>
+
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm text-blue-800 text-center">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    This is a demo. No real authentication required.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar (Hidden until login) -->
+    <div id="sidebar" class="sidebar fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform -translate-x-full lg:translate-x-0">
+        <!-- Logo -->
+        <div class="flex items-center justify-between p-6 border-b">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-home text-blue-600 text-2xl"></i>
+                <span class="text-xl font-bold text-blue-600">SmartRent</span>
+            </div>
+        </div>
+
+        <!-- User Profile -->
+        <div class="p-6 border-b">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user text-blue-600"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate" id="user-name">Demo User</p>
+                    <p class="text-sm text-gray-500 truncate" id="user-role">Tenant</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="p-4 space-y-2" id="navigation">
+            <!-- Navigation will be loaded based on role -->
+        </nav>
+
+        <!-- Footer -->
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t">
+            <button onclick="logout()" class="flex items-center space-x-3 text-gray-600 hover:text-red-600 transition w-full p-2 rounded-lg hover:bg-red-50">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content (Hidden until login) -->
+    <div id="main-content" class="lg:ml-64 min-h-screen hidden">
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="flex items-center justify-between p-4">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-gray-800" id="page-title">Dashboard</h1>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Notifications -->
+                    <div class="relative">
+                        <button id="notifications-button" class="p-2 text-gray-600 hover:text-blue-600 relative">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                    </div>
+
+                    <!-- User Menu -->
+                    <div class="relative">
+                        <button id="user-menu-button" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100">
+                            <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <span class="hidden md:inline text-sm font-medium" id="topbar-user-name">Demo User</span>
+                            <i class="fas fa-chevron-down text-sm text-gray-500"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="p-6">
+            <div id="dashboard-content">
+                <!-- Content will be loaded based on user role -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Demo user data
+        const demoUsers = {
+            tenant: {
+                id: 'demo-tenant-123',
+                full_name: 'Demo Tenant',
+                email: 'demo@tenant.com',
+                role: 'tenant',
+                phone: '+2348012345678'
+            },
+            agent: {
+                id: 'demo-agent-123',
+                full_name: 'Demo Agent',
+                email: 'demo@agent.com',
+                role: 'agent',
+                phone: '+2348022345678',
+                company: 'Prime Realty'
+            },
+            landlord: {
+                id: 'demo-landlord-123',
+                full_name: 'Demo Landlord',
+                email: 'demo@landlord.com',
+                role: 'landlord',
+                phone: '+2348032345678'
+            },
+            admin: {
+                id: 'demo-admin-123',
+                full_name: 'Admin User',
+                email: 'admin@smartrent.com',
+                role: 'admin',
+                phone: '+2348042345678'
+            }
+        };
+
+        // Demo properties data
+        const demoProperties = [
+            {
+                id: 'prop-1',
+                title: 'Luxury 3-Bedroom Apartment in VI',
+                description: 'Beautiful modern apartment with stunning city views',
+                address: 'Victoria Island, Lagos',
+                price: 2500000,
+                property_type: 'apartment',
+                bedrooms: 3,
+                bathrooms: 2,
+                area_sqft: 1200,
+                amenities: ['wifi', 'parking', 'gym', 'pool'],
+                is_verified: true,
+                is_available: true
+            },
+            {
+                id: 'prop-2',
+                title: 'Modern 5-Bedroom Villa in Lekki',
+                description: 'Spacious luxury villa with private garden',
+                address: 'Lekki Phase 1, Lagos',
+                price: 4800000,
+                property_type: 'villa',
+                bedrooms: 5,
+                bathrooms: 4,
+                area_sqft: 2800,
+                amenities: ['wifi', 'parking', 'pool', 'garden'],
+                is_verified: true,
+                is_available: true
+            },
+            {
+                id: 'prop-3',
+                title: 'Cozy Studio Apartment in Ikeja',
+                description: 'Perfect studio apartment for young professionals',
+                address: 'Ikeja GRA, Lagos',
+                price: 850000,
+                property_type: 'studio',
+                bedrooms: 1,
+                bathrooms: 1,
+                area_sqft: 600,
+                amenities: ['wifi', 'ac', 'furnished'],
+                is_verified: true,
+                is_available: true
+            }
+        ];
+
+        // Demo authentication service
+        const DemoAuthService = {
+            currentUser: null,
+
+            signInWithDemo(role) {
+                this.currentUser = demoUsers[role];
+                localStorage.setItem('demoUser', JSON.stringify(this.currentUser));
+                return { success: true, user: this.currentUser };
+            },
+
+            signOut() {
+                this.currentUser = null;
+                localStorage.removeItem('demoUser');
+                return { success: true };
+            },
+
+            getCurrentUser() {
+                if (this.currentUser) return this.currentUser;
+                
+                const stored = localStorage.getItem('demoUser');
+                if (stored) {
+                    this.currentUser = JSON.parse(stored);
+                    return this.currentUser;
+                }
+                return null;
+            }
+        };
+
+        // Demo data service (mocking Supabase)
+        const DemoDataService = {
+            async getProperties(filters = {}) {
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                let properties = [...demoProperties];
+                
+                // Apply simple filters
+                if (filters.type) {
+                    properties = properties.filter(p => p.property_type === filters.type);
+                }
+                
+                if (filters.search) {
+                    const searchTerm = filters.search.toLowerCase();
+                    properties = properties.filter(p => 
+                        p.title.toLowerCase().includes(searchTerm) ||
+                        p.address.toLowerCase().includes(searchTerm) ||
+                        p.description.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
+                return { data: properties, error: null };
+            },
+
+            async getBookings(userId) {
+                await new Promise(resolve => setTimeout(resolve, 300));
+                return {
+                    data: [
+                        {
+                            id: 'booking-1',
+                            property_id: 'prop-1',
+                            booking_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+                            status: 'confirmed',
+                            properties: { title: 'Luxury 3-Bedroom Apartment in VI' }
+                        }
+                    ],
+                    error: null
+                };
+            },
+
+            async getFavorites(userId) {
+                await new Promise(resolve => setTimeout(resolve, 300));
+                return {
+                    data: [
+                        {
+                            id: 'fav-1',
+                            property_id: 'prop-2',
+                            properties: {
+                                title: 'Modern 5-Bedroom Villa in Lekki',
+                                address: 'Lekki Phase 1, Lagos',
+                                price: 4800000,
+                                property_type: 'villa'
+                            }
+                        }
+                    ],
+                    error: null
+                };
+            }
+        };
+
+        // Demo login function
+        function demoLogin(role) {
+            const result = DemoAuthService.signInWithDemo(role);
+            if (result.success) {
+                // Hide login modal, show dashboard
+                document.getElementById('login-modal').classList.add('hidden');
+                document.getElementById('sidebar').classList.remove('transform', '-translate-x-full');
+                document.getElementById('main-content').classList.remove('hidden');
+                
+                // Load dashboard for the selected role
+                loadDashboard();
+            }
+        }
+
+        // Logout function
+        function logout() {
+            DemoAuthService.signOut();
+            // Show login modal, hide dashboard
+            document.getElementById('login-modal').classList.remove('hidden');
+            document.getElementById('sidebar').classList.add('transform', '-translate-x-full');
+            document.getElementById('main-content').classList.add('hidden');
+        }
+
+        // Load dashboard based on user role
+        async function loadDashboard() {
+            const user = DemoAuthService.getCurrentUser();
+            if (!user) {
+                logout();
+                return;
+            }
+
+            // Update UI with user info
+            document.getElementById('user-name').textContent = user.full_name;
+            document.getElementById('user-role').textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+            document.getElementById('topbar-user-name').textContent = user.full_name;
+
+            // Load role-specific navigation and content
+            loadNavigation(user.role);
+            await loadDashboardContent(user.role);
+        }
+
+        // Load navigation based on user role
+        function loadNavigation(role) {
+            const navigation = document.getElementById('navigation');
+            let navItems = '';
+
+            const commonItems = [
+                { icon: 'fas fa-tachometer-alt', text: 'Dashboard', page: 'dashboard' },
+                { icon: 'fas fa-user-circle', text: 'Profile', page: 'profile' },
+                { icon: 'fas fa-cog', text: 'Settings', page: 'settings' }
+            ];
+
+            const roleSpecificItems = {
+                tenant: [
+                    { icon: 'fas fa-search', text: 'Find Properties', page: 'find-properties' },
+                    { icon: 'fas fa-heart', text: 'Favorites', page: 'favorites' },
+                    { icon: 'fas fa-calendar-check', text: 'My Bookings', page: 'bookings' },
+                    { icon: 'fas fa-file-contract', text: 'My Rentals', page: 'rentals' },
+                    { icon: 'fas fa-tools', text: 'Maintenance', page: 'maintenance' },
+                    { icon: 'fas fa-credit-card', text: 'Payments', page: 'payments' }
+                ],
+                agent: [
+                    { icon: 'fas fa-home', text: 'My Properties', page: 'properties' },
+                    { icon: 'fas fa-plus-circle', text: 'Add Property', page: 'add-property' },
+                    { icon: 'fas fa-users', text: 'Leads', page: 'leads' },
+                    { icon: 'fas fa-calendar', text: 'Appointments', page: 'appointments' },
+                    { icon: 'fas fa-chart-line', text: 'Analytics', page: 'analytics' },
+                    { icon: 'fas fa-money-bill-wave', text: 'Commissions', page: 'commissions' }
+                ],
+                landlord: [
+                    { icon: 'fas fa-building', text: 'My Properties', page: 'properties' },
+                    { icon: 'fas fa-plus-circle', text: 'Add Property', page: 'add-property' },
+                    { icon: 'fas fa-users', text: 'Tenants', page: 'tenants' },
+                    { icon: 'fas fa-money-bill-wave', text: 'Rent Collection', page: 'rent-collection' },
+                    { icon: 'fas fa-chart-bar', text: 'Financial Reports', page: 'reports' },
+                    { icon: 'fas fa-tools', text: 'Maintenance', page: 'maintenance' }
+                ],
+                admin: [
+                    { icon: 'fas fa-users-cog', text: 'User Management', page: 'users' },
+                    { icon: 'fas fa-home', text: 'Property Management', page: 'property-management' },
+                    { icon: 'fas fa-shield-alt', text: 'Verifications', page: 'verifications' },
+                    { icon: 'fas fa-flag', text: 'Reports', page: 'reports' },
+                    { icon: 'fas fa-chart-pie', text: 'Platform Analytics', page: 'analytics' },
+                    { icon: 'fas fa-cogs', text: 'System Settings', page: 'system-settings' }
+                ]
+            };
+
+            // Combine common and role-specific items
+            const allItems = [...commonItems, ...(roleSpecificItems[role] || [])];
+
+            allItems.forEach(item => {
+                navItems += `
+                    <div class="nav-item" onclick="loadPage('${item.page}')">
+                        <i class="${item.icon} w-5 mr-3"></i>
+                        <span>${item.text}</span>
+                    </div>
+                `;
+            });
+
+            navigation.innerHTML = navItems;
+        }
+
+        // Load dashboard content based on user role
+        async function loadDashboardContent(role) {
+            const content = document.getElementById('dashboard-content');
+            
+            switch (role) {
+                case 'tenant':
+                    content.innerHTML = await loadTenantDashboard();
+                    break;
+                case 'agent':
+                    content.innerHTML = await loadAgentDashboard();
+                    break;
+                case 'landlord':
+                    content.innerHTML = await loadLandlordDashboard();
+                    break;
+                case 'admin':
+                    content.innerHTML = await loadAdminDashboard();
+                    break;
+                default:
+                    content.innerHTML = '<p>Invalid user role</p>';
+            }
+
+            // Initialize charts
+            initializeCharts();
+        }
+
+        // Tenant Dashboard
+        async function loadTenantDashboard() {
+            const user = DemoAuthService.getCurrentUser();
+            const [bookingsData, favoritesData] = await Promise.all([
+                DemoDataService.getBookings(user.id),
+                DemoDataService.getFavorites(user.id)
+            ]);
+
+            return `
+                <div class="space-y-6">
+                    <!-- Welcome Section -->
+                    <div class="bg-white rounded-2xl shadow-sm p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome back, ${user.full_name}!</h2>
+                                <p class="text-gray-600">Here's what's happening with your rental journey.</p>
+                            </div>
+                            <button onclick="loadPage('find-properties')" class="btn bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition mt-4 md:mt-0">
+                                <i class="fas fa-search mr-2"></i>Find Properties
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-blue-600 text-white rounded-2xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-blue-100">Active Rentals</p>
+                                    <p class="text-2xl font-bold mt-1">1</p>
+                                </div>
+                                <i class="fas fa-home text-2xl text-blue-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-600 text-white rounded-2xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-green-100">Upcoming Viewings</p>
+                                    <p class="text-2xl font-bold mt-1">${bookingsData.data?.length || 0}</p>
+                                </div>
+                                <i class="fas fa-calendar-check text-2xl text-green-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-purple-600 text-white rounded-2xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-purple-100">Favorite Properties</p>
+                                    <p class="text-2xl font-bold mt-1">${favoritesData.data?.length || 0}</p>
+                                </div>
+                                <i class="fas fa-heart text-2xl text-purple-200"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-orange-600 text-white rounded-2xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-orange-100">Pending Payments</p>
+                                    <p class="text-2xl font-bold mt-1">0</p>
+                                </div>
+                                <i class="fas fa-credit-card text-2xl text-orange-200"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Upcoming Viewings -->
+                        <div class="bg-white rounded-2xl shadow-sm p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Upcoming Viewings</h3>
+                                <button onclick="loadPage('bookings')" class="text-sm text-blue-600 hover:underline">View All</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${bookingsData.data?.map(booking => `
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p class="font-medium text-gray-800">${booking.properties.title}</p>
+                                            <p class="text-sm text-gray-600">${new Date(booking.booking_date).toLocaleDateString()}</p>
+                                        </div>
+                                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                                            ${booking.status}
+                                        </span>
+                                    </div>
+                                `).join('') || '<p class="text-gray-500 text-center py-4">No upcoming viewings</p>'}
+                            </div>
+                        </div>
+
+                        <!-- Favorite Properties -->
+                        <div class="bg-white rounded-2xl shadow-sm p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Favorite Properties</h3>
+                                <button onclick="loadPage('favorites')" class="text-sm text-blue-600 hover:underline">View All</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${favoritesData.data?.map(fav => `
+                                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-home text-blue-600"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-medium text-gray-800">${fav.properties.title}</p>
+                                            <p class="text-sm text-gray-600">₦${fav.properties.price.toLocaleString()}/month</p>
+                                        </div>
+                                    </div>
+                                `).join('') || '<p class="text-gray-500 text-center py-4">No favorite properties</p>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-2xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <button onclick="loadPage('find-properties')" class="p-4 border-2 border-blue-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition text-center">
+                                <i class="fas fa-search text-blue-600 text-2xl mb-2"></i>
+                                <p class="font-medium text-gray-800">Find Properties</p>
+                            </button>
+                            
+                            <button onclick="loadPage('bookings')" class="p-4 border-2 border-green-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition text-center">
+                                <i class="fas fa-calendar text-green-600 text-2xl mb-2"></i>
+                                <p class="font-medium text-gray-800">My Bookings</p>
+                            </button>
+                            
+                            <button onclick="loadPage('payments')" class="p-4 border-2 border-purple-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition text-center">
+                                <i class="fas fa-credit-card text-purple-600 text-2xl mb-2"></i>
+                                <p class="font-medium text-gray-800">Payments</p>
+                            </button>
+                            
+                            <button onclick="loadPage('maintenance')" class="p-4 border-2 border-orange-200 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition text-center">
+                                <i class="fas fa-tools text-orange-600 text-2xl mb-2"></i>
+                                <p class="font-medium text-gray-800">Maintenance</p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load other dashboard functions (agent, landlord, admin) similarly...
+        async function loadAgentDashboard() {
+            const user = DemoAuthService.getCurrentUser();
+            return `
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">Agent Dashboard</h2>
+                                <p class="text-gray-600">Welcome back, ${user.full_name}! Manage your properties and clients.</p>
+                            </div>
+                            <button onclick="loadPage('add-property')" class="btn bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition mt-4 md:mt-0">
+                                <i class="fas fa-plus mr-2"></i>Add Property
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Add agent-specific content -->
+                </div>
+            `;
+        }
+
+        async function loadLandlordDashboard() {
+            const user = DemoAuthService.getCurrentUser();
+            return `
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">Landlord Dashboard</h2>
+                                <p class="text-gray-600">Welcome back, ${user.full_name}! Manage your properties and rental income.</p>
+                            </div>
+                            <button onclick="loadPage('add-property')" class="btn bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition mt-4 md:mt-0">
+                                <i class="fas fa-plus mr-2"></i>Add Property
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Add landlord-specific content -->
+                </div>
+            `;
+        }
+
+        async function loadAdminDashboard() {
+            const user = DemoAuthService.getCurrentUser();
+            return `
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">Admin Dashboard</h2>
+                                <p class="text-gray-600">Welcome back, ${user.full_name}! Monitor platform performance.</p>
+                            </div>
+                            <div class="flex space-x-3 mt-4 md:mt-0">
+                                <button onclick="loadPage('users')" class="btn bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition">
+                                    <i class="fas fa-users mr-2"></i>Manage Users
+                                </button>
+                                <button onclick="loadPage('verifications')" class="btn bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition">
+                                    <i class="fas fa-shield-alt mr-2"></i>Verifications
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Add admin-specific content -->
+                </div>
+            `;
+        }
+
+        // Page loading function
+        async function loadPage(page) {
+            document.getElementById('page-title').textContent = getPageTitle(page);
+            
+            const content = document.getElementById('dashboard-content');
+            content.innerHTML = `
+                <div class="flex justify-center items-center py-12">
+                    <div class="loading-spinner"></div>
+                </div>
+            `;
+
+            // Simulate loading
+            setTimeout(async () => {
+                let pageContent = '';
+                
+                switch (page) {
+                    case 'dashboard':
+                        const user = DemoAuthService.getCurrentUser();
+                        switch (user.role) {
+                            case 'tenant':
+                                pageContent = await loadTenantDashboard();
+                                break;
+                            case 'agent':
+                                pageContent = await loadAgentDashboard();
+                                break;
+                            case 'landlord':
+                                pageContent = await loadLandlordDashboard();
+                                break;
+                            case 'admin':
+                                pageContent = await loadAdminDashboard();
+                                break;
+                        }
+                        break;
+                    case 'find-properties':
+                        pageContent = await loadFindPropertiesPage();
+                        break;
+                    default:
+                        pageContent = `
+                            <div class="text-center py-12">
+                                <i class="fas fa-cogs text-6xl text-gray-400 mb-4"></i>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">${getPageTitle(page)}</h2>
+                                <p class="text-gray-600">This page is working! Full functionality coming soon.</p>
+                                <div class="mt-6 p-4 bg-blue-50 rounded-lg max-w-md mx-auto">
+                                    <p class="text-sm text-blue-800">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Demo mode: This would connect to Supabase in production
+                                    </p>
+                                </div>
+                            </div>
+                        `;
+                }
+                
+                content.innerHTML = pageContent;
+                initializeCharts();
+            }, 1000);
+        }
+
+        // Property search page
+        async function loadFindPropertiesPage() {
+            const properties = await DemoDataService.getProperties();
+            
+            return `
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm p-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Find Properties</h2>
+                        
+                        <!-- Search Bar -->
+                        <div class="flex flex-col lg:flex-row gap-4 mb-6">
+                            <div class="flex-1 relative">
+                                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" 
+                                       id="property-search"
+                                       placeholder="Search by location, property type..."
+                                       class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <button onclick="searchProperties()" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition">
+                                <i class="fas fa-search mr-2"></i>Search
+                            </button>
+                        </div>
+
+                        <!-- Properties Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="properties-grid">
+                            ${properties.data.map(property => `
+                                <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition">
+                                    <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" 
+                                         alt="${property.title}" 
+                                         class="w-full h-48 object-cover">
+                                    <div class="p-4">
+                                        <h3 class="font-semibold text-gray-800 text-lg mb-2">${property.title}</h3>
+                                        <p class="text-gray-600 text-sm mb-3">${property.address}</p>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-xl font-bold text-blue-600">₦${property.price.toLocaleString()}/mo</span>
+                                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                                ${property.property_type}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center text-gray-500 text-sm space-x-4 mb-4">
+                                            <span><i class="fas fa-bed mr-1"></i> ${property.bedrooms} beds</span>
+                                            <span><i class="fas fa-bath mr-1"></i> ${property.bathrooms} baths</span>
+                                        </div>
+                                        <button onclick="viewProperty('${property.id}')" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition">
+                                            View Details
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getPageTitle(page) {
+            const titles = {
+                'dashboard': 'Dashboard',
+                'profile': 'My Profile',
+                'find-properties': 'Find Properties',
+                'favorites': 'My Favorites',
+                // ... other titles
+            };
+            return titles[page] || 'SmartRent';
+        }
+
+        function initializeCharts() {
+            // Initialize any charts if needed
+            console.log('Charts initialized');
+        }
+
+        function searchProperties() {
+            const searchTerm = document.getElementById('property-search').value;
+            alert(`Searching for: ${searchTerm}\n\nIn a real application, this would filter the properties.`);
+        }
+
+        function viewProperty(propertyId) {
+            alert(`Viewing property: ${propertyId}\n\nThis would open a property details page.`);
+        }
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('transform');
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        });
+
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = DemoAuthService.getCurrentUser();
+            if (user) {
+                // User is already logged in, show dashboard
+                document.getElementById('login-modal').classList.add('hidden');
+                document.getElementById('sidebar').classList.remove('transform', '-translate-x-full');
+                document.getElementById('main-content').classList.remove('hidden');
+                loadDashboard();
+            }
+            // If no user, login modal remains visible
+        });
+    </script>
+</body>
+</html>
