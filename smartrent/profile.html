@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - SmartRent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .profile-header {
+            background: linear-gradient(135deg, #525357 0%, #764ba2 100%);
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Reuse the same dashboard layout from dashboard.html -->
+    <!-- Include the same sidebar and topbar structure -->
+
+    <main class="lg:ml-64 min-h-screen">
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="flex items-center justify-between p-4">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-gray-800">My Profile</h1>
+                </div>
+            </div>
+        </header>
+
+        <!-- Profile Content -->
+        <div class="p-6">
+            <div class="max-w-6xl mx-auto">
+                <!-- Profile Header -->
+                <div class="profile-header rounded-2xl text-white p-8 mb-6">
+                    <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+                        <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-user text-3xl"></i>
+                        </div>
+                        <div class="text-center md:text-left">
+                            <h2 class="text-3xl font-bold" id="profile-name">Loading...</h2>
+                            <p class="text-white/80 text-lg" id="profile-role">Loading...</p>
+                            <p class="text-white/60 mt-2" id="profile-email">Loading...</p>
+                        </div>
+                        <div class="flex-1"></div>
+                        <button onclick="editProfile()" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-6 py-3 rounded-lg font-medium transition">
+                            <i class="fas fa-edit mr-2"></i>Edit Profile
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Personal Information -->
+                        <div class="stat-card">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-4">Personal Information</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                    <p class="text-gray-900" id="info-name">Loading...</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <p class="text-gray-900" id="info-email">Loading...</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                    <p class="text-gray-900" id="info-phone">Loading...</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                                    <p class="text-gray-900" id="info-dob">Not set</p>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                                    <p class="text-gray-900" id="info-bio">No bio provided</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Verification -->
+                        <div class="stat-card">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-4">Account Verification</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-id-card text-blue-600 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium text-gray-800">ID Verification</p>
+                                            <p class="text-sm text-gray-600">Verify your identity</p>
+                                        </div>
+                                    </div>
+                                    <span id="id-verification-status" class="badge badge-warning">Pending</span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-envelope text-green-600 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium text-gray-800">Email Verification</p>
+                                            <p class="text-sm text-gray-600">Verify your email address</p>
+                                        </div>
+                                    </div>
+                                    <span id="email-verification-status" class="badge badge-success">Verified</span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-mobile-alt text-purple-600 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium text-gray-800">Phone Verification</p>
+                                            <p class="text-sm text-gray-600">Verify your phone number</p>
+                                        </div>
+                                    </div>
+                                    <span id="phone-verification-status" class="badge badge-warning">Pending</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="stat-card">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-4">Recent Activity</h3>
+                            <div class="space-y-3" id="recent-activity">
+                                <!-- Activity items will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                        <!-- Quick Stats -->
+                        <div class="stat-card">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-4">Quick Stats</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Properties Viewed</span>
+                                    <span class="font-semibold" id="stats-viewed">0</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Bookings Made</span>
+                                    <span class="font-semibold" id="stats-bookings">0</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Favorites</span>
+                                    <span class="font-semibold" id="stats-favorites">0</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Member Since</span>
+                                    <span class="font-semibold" id="stats-member-since">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Security -->
+                        <div class="stat-card">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-4">Security</h3>
+                            <div class="space-y-3">
+                                <button onclick="changePassword()" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas fa-lock text-gray-600"></i>
+                                            <span>Change Password</span>
+                                        </div>
+                                        <i class="fas fa-chevron-right text-gray-400"></i>
+                                    </div>
+                                </button>
+                                
+                                <button onclick="manageSessions()" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas fa-desktop text-gray-600"></i>
+                                            <span>Manage Sessions</span>
+                                        </div>
+                                        <i class="fas fa-chevron-right text-gray-400"></i>
+                                    </div>
+                                </button>
+                                
+                                <button onclick="twoFactorAuth()" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas fa-shield-alt text-gray-600"></i>
+                                            <span>Two-Factor Auth</span>
+                                        </div>
+                                        <i class="fas fa-chevron-right text-gray-400"></i>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Connected Accounts -->
+                        <div class="stat-card">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-4">Connected Accounts</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fab fa-google text-red-500"></i>
+                                        <span>Google</span>
+                                    </div>
+                                    <button class="text-blue-600 hover:underline text-sm">Connect</button>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fab fa-facebook text-blue-600"></i>
+                                        <span>Facebook</span>
+                                    </div>
+                                    <button class="text-blue-600 hover:underline text-sm">Connect</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Load profile data
+        async function loadProfileData() {
+            try {
+                const user = await AuthService.getCurrentUser();
+                if (!user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (error) throw error;
+
+                // Update profile information
+                document.getElementById('profile-name').textContent = profile.full_name;
+                document.getElementById('profile-role').textContent = profile.role.charAt(0).toUpperCase() + profile.role.slice(1);
+                document.getElementById('profile-email').textContent = user.email;
+                
+                document.getElementById('info-name').textContent = profile.full_name;
+                document.getElementById('info-email').textContent = user.email;
+                document.getElementById('info-phone').textContent = profile.phone || 'Not provided';
+                document.getElementById('info-dob').textContent = profile.date_of_birth || 'Not set';
+                document.getElementById('info-bio').textContent = profile.bio || 'No bio provided';
+
+                // Update verification status
+                document.getElementById('id-verification-status').textContent = profile.id_verified ? 'Verified' : 'Pending';
+                document.getElementById('id-verification-status').className = profile.id_verified ? 'badge badge-success' : 'badge badge-warning';
+                
+                document.getElementById('email-verification-status').textContent = user.email_confirmed_at ? 'Verified' : 'Pending';
+                document.getElementById('email-verification-status').className = user.email_confirmed_at ? 'badge badge-success' : 'badge badge-warning';
+                
+                document.getElementById('phone-verification-status').textContent = profile.phone ? 'Verified' : 'Pending';
+                document.getElementById('phone-verification-status').className = profile.phone ? 'badge badge-success' : 'badge badge-warning';
+
+                // Load role-specific stats
+                await loadRoleSpecificStats(profile.role, user.id);
+
+                // Load recent activity
+                await loadRecentActivity(user.id, profile.role);
+
+            } catch (error) {
+                console.error('Profile loading error:', error);
+            }
+        }
+
+        // Load role-specific statistics
+        async function loadRoleSpecificStats(role, userId) {
+            let viewed = 0, bookings = 0, favorites = 0;
+
+            switch (role) {
+                case 'tenant':
+                    const [bookingsData, favoritesData] = await Promise.all([
+                        supabase.from('bookings').select('*').eq('tenant_id', userId),
+                        supabase.from('favorites').select('*').eq('tenant_id', userId)
+                    ]);
+                    bookings = bookingsData.data?.length || 0;
+                    favorites = favoritesData.data?.length || 0;
+                    viewed = bookings; // Simple approximation
+                    break;
+                
+                case 'agent':
+                    const [propertiesData, agentBookings] = await Promise.all([
+                        supabase.from('properties').select('*').eq('agent_id', userId),
+                        supabase.from('bookings').select('*').eq('agent_id', userId)
+                    ]);
+                    viewed = propertiesData.data?.length || 0;
+                    bookings = agentBookings.data?.length || 0;
+                    break;
+                
+                case 'landlord':
+                    const landlordProperties = await supabase.from('properties').select('*').eq('landlord_id', userId);
+                    viewed = landlordProperties.data?.length || 0;
+                    break;
+            }
+
+            document.getElementById('stats-viewed').textContent = viewed;
+            document.getElementById('stats-bookings').textContent = bookings;
+            document.getElementById('stats-favorites').textContent = favorites;
+
+            // Set member since date
+            const user = await AuthService.getCurrentUser();
+            const memberSince = new Date(user.created_at).toLocaleDateString();
+            document.getElementById('stats-member-since').textContent = memberSince;
+        }
+
+        // Load recent activity
+        async function loadRecentActivity(userId, role) {
+            const activityContainer = document.getElementById('recent-activity');
+            let activities = [];
+
+            // Fetch different activities based on role
+            if (role === 'tenant') {
+                const [bookings, payments] = await Promise.all([
+                    supabase.from('bookings').select('*, properties(title)').eq('tenant_id', userId).order('created_at', { ascending: false }).limit(5),
+                    supabase.from('payments').select('*').eq('tenant_id', userId).order('created_at', { ascending: false }).limit(5)
+                ]);
+
+                if (bookings.data) {
+                    bookings.data.forEach(booking => {
+                        activities.push({
+                            type: 'booking',
+                            message: `Scheduled viewing for ${booking.properties.title}`,
+                            date: booking.created_at,
+                            icon: 'fas fa-calendar'
+                        });
+                    });
+                }
+
+                if (payments.data) {
+                    payments.data.forEach(payment => {
+                        activities.push({
+                            type: 'payment',
+                            message: `Made payment of ₦${payment.amount.toLocaleString()}`,
+                            date: payment.created_at,
+                            icon: 'fas fa-credit-card'
+                        });
+                    });
+                }
+            } else if (role === 'agent') {
+                const [properties, appointments] = await Promise.all([
+                    supabase.from('properties').select('*').eq('agent_id', userId).order('created_at', { ascending: false }).limit(5),
+                    supabase.from('bookings').select('*, properties(title)').eq('agent_id', userId).order('created_at', { ascending: false }).limit(5)
+                ]);
+
+                if (properties.data) {
+                    properties.data.forEach(property => {
+                        activities.push({
+                            type: 'property',
+                            message: `Listed new property: ${property.title}`,
+                            date: property.created_at,
+                            icon: 'fas fa-home'
+                        });
+                    });
+                }
+
+                if (appointments.data) {
+                    appointments.data.forEach(appointment => {
+                        activities.push({
+                            type: 'appointment',
+                            message: `New appointment for ${appointment.properties.title}`,
+                            date: appointment.created_at,
+                            icon: 'fas fa-users'
+                        });
+                    });
+                }
+            }
+
+            // Sort by date and display
+            activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (activities.length === 0) {
+                activityContainer.innerHTML = '<p class="text-gray-500 text-center py-4">No recent activity</p>';
+                return;
+            }
+
+            activityContainer.innerHTML = activities.map(activity => `
+                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="${activity.icon} text-blue-600 text-sm"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-800">${activity.message}</p>
+                        <p class="text-xs text-gray-500">${new Date(activity.date).toLocaleDateString()}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Edit profile function
+        function editProfile() {
+            // Implementation for edit profile modal
+            alert('Edit profile functionality will be implemented');
+        }
+
+        // Security functions
+        function changePassword() {
+            alert('Change password functionality will be implemented');
+        }
+
+        function manageSessions() {
+            alert('Manage sessions functionality will be implemented');
+        }
+
+        function twoFactorAuth() {
+            alert('Two-factor authentication functionality will be implemented');
+        }
+
+        // Load profile when page loads
+        document.addEventListener('DOMContentLoaded', loadProfileData);
+    </script>
+</body>
+</html>
